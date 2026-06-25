@@ -17,4 +17,15 @@ class TransactionRepository implements TransactionInterface
             $data->toArray()
         );
     }
+
+    public function findByTransactionId(string $transactionId): ?TransactionEntity
+    {
+        $transaction = $this->transactionModel->where('transaction_id', $transactionId)->first();
+
+        if (!$transaction) {
+            return null;
+        }
+
+        return TransactionEntity::fromModel($transaction);
+    }
 }

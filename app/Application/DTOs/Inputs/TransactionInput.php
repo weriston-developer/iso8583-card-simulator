@@ -8,10 +8,10 @@ use App\Application\DTOs\Inputs\Info\CardInput;
 use App\Application\DTOs\Inputs\Info\EstablishmentInput;
 use App\Application\DTOs\Inputs\Info\TransactionMessageInput;
 
-final class PurchaseInput
+final class TransactionInput
 {
     public function __construct(
-        public readonly string $transactionId,
+        public readonly string $transactionUuid,
         public readonly string $transactionType,
         public readonly string $psProductCode,
         public readonly string $psProductName,

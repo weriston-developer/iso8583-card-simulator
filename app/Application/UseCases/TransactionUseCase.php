@@ -3,51 +3,92 @@
 namespace App\Application\UseCases;
 
 use App\Application\DTOs\Outputs\TransactionOutput;
-use App\Application\DTOs\Inputs\PurchaseInput;
+use App\Application\DTOs\Inputs\TransactionInput;
 use App\Domain\Entities\CardEntity;
 use App\Domain\Entities\TransactionEntity;
 use App\Domain\VOs\MoneyVO;
 use App\Infra\Persistence\Repositories\Interface\BalanceInterface;
 use App\Infra\Persistence\Repositories\Interface\CardInterface;
 use App\Infra\Persistence\Repositories\Interface\TransactionInterface;
+use InvalidArgumentException;
 
-class PurchaseUseCase
+class TransactionUseCase
 {
+
+    /**
+     * $input->cardInput->cardId é o Identificador externo conhecido do cartão (UUID)
+     * $transactionId é o Identificador externo gerado da transação (UUID)
+     * TransactionUseCase
+     * @param CardInterface $cardRepository
+     * @param TransactionInterface $transactionRepository
+     * @param BalanceInterface $balanceRepository
+     */
 
     public function __construct(
         private readonly CardInterface $cardRepository,
         private readonly TransactionInterface $transactionRepository,
         private readonly BalanceInterface $balanceRepository,
     ) {}
-    public function execute(PurchaseInput $input): TransactionOutput
+    public function execute(TransactionInput $input): TransactionOutput
     {
-        $card = $this->cardRepository->findByUuid((string) $input->cardInput->cardId);
         $balance = null;
         $authorizationCode = '00';
+
+        $card = $this->cardRepository->findByUuid((string) $input->cardInput->cardUuid);
 
         if (!$card) {
             $authorizationCode = '02';
         }
 
-        if ($card && !$card->cardEnabled()) {
+        if ($authorizationCode === '00' && !$card?->cardEnabled()) {
             $authorizationCode = '03';
         }
 
-        if ($card && $card->exceedsMonthlyLimit($input->amount->totalAmount)) {
+        if ($authorizationCode === '00' && $card?->exceedsMonthlyLimit($input->amount->totalAmount)) {
             $authorizationCode = '08';
         }
 
-        if ($card && $card->id !== null) {
+        if ($card?->id !== null) {
             $balance = $this->balanceRepository->getBalanceByCardId((string) $card->id);
         }
 
-        if ($authorizationCode === '00' && $balance && $balance->lessThan($input->amount->totalAmount)) {
+        $transaction = $this->transactionRepository->findByTransactionUuid($input->transactionUuid);
+
+        if ($transaction?->exists($input->transactionUuid)) {
+            $authorizationCode = '07';
+
+            $this->createTransaction(
+                input: $input,
+                card: $card,
+                authorizationCode: $authorizationCode,
+                balanceAfterPurchase: null,
+                currentBalance: $balance,
+            );
+
+            return TransactionOutput::fromAuthorizationCode(
+                authorizationCode: $authorizationCode,
+                balanceAmount: null,
+                balanceCurrencyCode: null,
+            );
+        }
+
+        if ($authorizationCode === '00' && $balance?->lessThan($input->amount->totalAmount)) {
             $authorizationCode = '01';
         }
 
         $balanceAfterPurchase = null;
         if ($authorizationCode === '00' && $balance) {
-            $balanceAfterPurchase = $balance->subtract($input->amount->totalAmount);
+            try {
+                $candidateBalance = $balance->subtract($input->amount->totalAmount);
+
+                if ($candidateBalance->lessThan(MoneyVO::zero())) {
+                    $authorizationCode = '01';
+                } else {
+                    $balanceAfterPurchase = $candidateBalance;
+                }
+            } catch (InvalidArgumentException) {
+                $authorizationCode = '01';
+            }
         }
 
         $this->createTransaction($input, $card, $authorizationCode, $balanceAfterPurchase, $balance);
@@ -59,24 +100,23 @@ class PurchaseUseCase
         return TransactionOutput::fromAuthorizationCode(
             authorizationCode: $authorizationCode,
             balanceAmount: TransactionOutput::requiresBalance($authorizationCode) && $balance
-                ? $balance->toCents()
+                ? $balanceAfterPurchase->toCents()
                 : null,
             balanceCurrencyCode: TransactionOutput::requiresBalance($authorizationCode) ? 986 : null,
         );
     }
 
     private function createTransaction(
-        PurchaseInput $input,
+        TransactionInput $input,
         ?CardEntity $card,
         string $authorizationCode,
         ?MoneyVO $balanceAfterPurchase,
         ?MoneyVO $currentBalance,
-    ): void
-    {
+    ): void {
         $transactionEntity = TransactionEntity::fromArray([
-            'transaction_id' => $input->transactionId,
+            'transaction_uuid' => $input->transactionUuid,
             'transaction_type' => $input->transactionType,
-            'card_id' => (string) ($card->id ?? $input->cardInput->cardId),
+            'card_uuid' => (string) ($card->uuid ?? $input->cardInput->cardUuid),
             'request_mti' => $input->iso8583MessageInput->requestMti,
             'request_card_number' => $input->iso8583MessageInput->requestCardNumber,
             'request_processing_code' => $input->iso8583MessageInput->requestProcessingCode,
@@ -108,7 +148,7 @@ class PurchaseUseCase
             'request_currency_code_cardholder_billing' => $input->iso8583MessageInput->requestCurrencyCodeCardholderBilling,
             'request_ps_product_code' => $input->psProductCode,
             // RESPONSE FIELDS - Dados da resposta
-            'response_mti' => '0110',
+            'response_mti' => $input->transactionType === 'PURCHASE' ? '0110' : '0210',
             'response_card_number' => $card?->lastFourDigits ?? $input->cardInput->cardLastFourDigits,
             'response_processing_code' => $input?->iso8583MessageInput->requestProcessingCode,
             'response_transaction_amount_local' => $authorizationCode === '00'

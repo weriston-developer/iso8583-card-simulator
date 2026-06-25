@@ -7,9 +7,9 @@ use App\Domain\VOs\MoneyVO;
 class TransactionEntity
 {
     public function __construct(
-        public readonly string $transactionId,
+        public readonly string $transactionUuid,
         public readonly string $transactionType, //TODO ENUM TransactionType PURCHASE, WITHDRAWAL, DEPOSIT, TRANSFER, PAYMENT
-        public readonly string $cardId,
+        public readonly string $cardUuid,
         public readonly ?string $uuid,
         public readonly ?int $id,
         // Request Fields - ISO8583
@@ -66,9 +66,9 @@ class TransactionEntity
     public static function fromArray(array $data): self
     {
         return new self(
-            transactionId: $data['transaction_id'],
+            transactionUuid: $data['transaction_uuid'],
             transactionType: $data['transaction_type'], 
-            cardId: $data['card_id'],
+            cardUuid: $data['card_uuid'],
             uuid: $data['uuid'] ?? null,
             id: $data['id'] ?? null,
             requestMti: $data['request_mti'] ?? null,
@@ -124,9 +124,9 @@ class TransactionEntity
     public function toArray(): array
     {
         return [
-            'transaction_id' => $this->transactionId,
+            'transaction_uuid' => $this->transactionUuid,
             'transaction_type' => $this->transactionType,
-            'card_id' => $this->cardId,
+            'card_uuid' => $this->cardUuid,
             'uuid' => $this->uuid,
             'id' => $this->id,
             'request_mti' => $this->requestMti,
@@ -182,9 +182,9 @@ class TransactionEntity
     public static function fromModel(\App\Models\TransactionModel $model): self
     {
         return new self(
-            transactionId: $model->transaction_id,
+            transactionUuid: $model->transaction_uuid,
             transactionType: $model->transaction_type,
-            cardId: $model->card_id,
+            cardUuid: $model->card_uuid,
             uuid: $model->uuid,
             id: $model->id,
             requestMti: $model->request_mti,
@@ -247,9 +247,9 @@ class TransactionEntity
         return $this->responseCode !== '00';
     }
 
-    public function exists(string $otherTransactionId): bool
+    public function exists(string $otherTransactionUuid): bool
     {
-        return $this->transactionId === $otherTransactionId;
+        return $this->transactionUuid === $otherTransactionUuid;
     }
     
 }
