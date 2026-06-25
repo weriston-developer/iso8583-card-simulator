@@ -30,6 +30,7 @@ class PurchaseRequest extends FormRequest
     {
         return [
             'transaction_id' => ['required', 'string'],
+            'transaction_type' => ['required', 'string'],
             'ps_product_code' => ['required', 'string'],
             'ps_product_name' => ['required', 'string'],
             'country_code' => ['required', 'string', 'size:2'],
@@ -78,6 +79,7 @@ class PurchaseRequest extends FormRequest
 
         return new PurchaseInput(
             transactionId: (string) $data['transaction_id'],
+            transactionType: (string) $data['transaction_type'],
             psProductCode: (string) $data['ps_product_code'],
             psProductName: (string) $data['ps_product_name'],
             countryCode: (string) $data['country_code'],

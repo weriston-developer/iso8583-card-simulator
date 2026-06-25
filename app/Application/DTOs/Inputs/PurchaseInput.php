@@ -12,6 +12,7 @@ final class PurchaseInput
 {
     public function __construct(
         public readonly string $transactionId,
+        public readonly string $transactionType,
         public readonly string $psProductCode,
         public readonly string $psProductName,
         public readonly string $countryCode,

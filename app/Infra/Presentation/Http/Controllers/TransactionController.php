@@ -11,10 +11,8 @@ class TransactionController extends Controller
     public function purchase(PurchaseRequest $request, PurchaseUseCase $useCase)
     {
         $input = $request->toInput();
+        $output = $useCase->execute($input);
 
-        dd($input);
-
-        $useCase->execute($input);
-        return response()->json(['message' => 'Purchase transaction processed successfully.']);
+        return response()->json($output->getData(), $output->getStatusCode());
     }
 }
