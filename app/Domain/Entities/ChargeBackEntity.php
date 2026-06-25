@@ -3,24 +3,30 @@
 namespace App\Domain\Entities;
 
 use App\Domain\VOs\MoneyVO;
-use App\Infra\Persistence\Models\Transaction;
+use App\Infra\Persistence\Models\ChargeBack;
 
-class TransactionEntity
+class ChargeBackEntity
 {
     public function __construct(
-        public readonly string $transactionUuid,
-        public readonly string $transactionType, //TODO ENUM TransactionType PURCHASE, WITHDRAWAL, DEPOSIT, TRANSFER, PAYMENT
-        public readonly string $cardUuid,
-        public readonly ?string $uuid,
+        public readonly string $chargeBackUuid,
+        public readonly string $transactionOriginalUuid,
+        public readonly string $transactionType,
+        public readonly string $psProductCode,
+        public readonly string $psProductName,
+        public readonly string $countryCode,
+        public readonly string $preAuthorization,
+        public readonly string $entryMode,
         public readonly ?int $id,
+        public readonly ?string $uuid,
+
         // Request Fields - ISO8583
         public readonly ?string $requestMti,
         public readonly ?string $requestCardNumber,
         public readonly ?string $requestProcessingCode,
-        public readonly ?int $requestTransactionAmountLocalOriginal,
-        public readonly ?MoneyVO $requestTransactionAmountLocal,
-        public readonly ?MoneyVO $requestTransactionAmountReferencia,
-        public readonly ?MoneyVO $requestAmountInCardHolderBilling,
+        public readonly ?string $requestPsProductCode,
+        public readonly ?int $requestOriginalTransactionAmountValue,
+        public readonly ?MoneyVO $requestOriginalTransactionAmount,
+        public readonly ?MoneyVO $requestTransactionAmount,
         public readonly ?string $requestTransmitionDateAndTime,
         public readonly ?string $requestConvertionRateCardHolderBilling,
         public readonly ?string $requestSystemTraceAuditNumber,
@@ -33,16 +39,16 @@ class TransactionEntity
         public readonly ?string $requestPosConditionCode,
         public readonly ?string $requestAquiringInstitutionCode,
         public readonly ?string $requestRetrievalReferenceNumber,
-        public readonly ?string $requestAuthorizationResponseCode,
+        public readonly ?string $requestResponseCode,
         public readonly ?string $requestCardAcceptorTerminal,
         public readonly ?string $requestCardAcceptorIdentificationCode,
         public readonly ?string $requestCardAcceptorNameLocation,
-        public readonly ?string $requestContainsPdsInLtvFormat,
         public readonly ?string $requestTransactionCurrencyCode,
-        public readonly ?string $requestTransactionAmount,
+        public readonly ?string $requestTransactionCurrencyCode2,
         public readonly ?string $requestCurrencyCodeCardholderBilling,
-        public readonly ?string $requestPsProductCode,
-        // Response Fields
+        public readonly ?string $requestValues,
+        public readonly ?string $requestReplacementAmounts,
+        // Response Fields - ISO8583
         public readonly ?string $responseMti,
         public readonly ?string $responseCardNumber,
         public readonly ?string $responseProcessingCode,
@@ -61,24 +67,29 @@ class TransactionEntity
         public readonly ?string $responseCardAcceptorIdentificationCode,
         public readonly ?string $responseCardAcceptorNameLocation,
         public readonly ?string $responseTransactionCurrencyCode,
-        public readonly ?string $responseCurrencyCodeCardholderBilling,
+        public readonly ?string $responseCurrencyCodeCardholderBilling
     ) {}
 
     public static function fromArray(array $data): self
     {
         return new self(
-            transactionUuid: $data['transaction_uuid'],
+            chargeBackUuid: $data['charge_back_uuid'],
+            transactionOriginalUuid: $data['transaction_original_uuid'],
             transactionType: $data['transaction_type'],
-            cardUuid: $data['card_uuid'],
-            uuid: $data['uuid'] ?? null,
+            psProductCode: $data['ps_product_code'],
+            psProductName: $data['ps_product_name'],
+            countryCode: $data['country_code'],
+            preAuthorization: $data['pre_authorization'],
+            entryMode: $data['entry_mode'],
             id: $data['id'] ?? null,
+            uuid: $data['uuid'] ?? null,
             requestMti: $data['request_mti'] ?? null,
             requestCardNumber: $data['request_card_number'] ?? null,
             requestProcessingCode: $data['request_processing_code'] ?? null,
-            requestTransactionAmountLocalOriginal: $data['request_transaction_amount_local_original'] ?? null,
-            requestTransactionAmountLocal: isset($data['request_transaction_amount_local']) ? MoneyVO::fromCents($data['request_transaction_amount_local']) : null,
-            requestTransactionAmountReferencia: isset($data['request_transaction_amount_referencia']) ? MoneyVO::fromCents($data['request_transaction_amount_referencia']) : null,
-            requestAmountInCardHolderBilling: isset($data['request_amount_in_card_holder_billing']) ? MoneyVO::fromCents($data['request_amount_in_card_holder_billing']) : null,
+            requestPsProductCode: $data['request_ps_product_code'] ?? null,
+            requestOriginalTransactionAmountValue: $data['request_original_transaction_amount_value'] ?? null,
+            requestOriginalTransactionAmount: isset($data['request_original_transaction_amount']) ? MoneyVO::fromCents($data['request_original_transaction_amount']) : null,
+            requestTransactionAmount: isset($data['request_transaction_amount']) ? MoneyVO::fromCents($data['request_transaction_amount']) : null,
             requestTransmitionDateAndTime: $data['request_transmition_date_and_time'] ?? null,
             requestConvertionRateCardHolderBilling: $data['request_convertion_rate_card_holder_billing'] ?? null,
             requestSystemTraceAuditNumber: $data['request_system_trace_audit_number'] ?? null,
@@ -91,15 +102,15 @@ class TransactionEntity
             requestPosConditionCode: $data['request_pos_condition_code'] ?? null,
             requestAquiringInstitutionCode: $data['request_aquiring_institution_code'] ?? null,
             requestRetrievalReferenceNumber: $data['request_retrieval_reference_number'] ?? null,
-            requestAuthorizationResponseCode: $data['request_authorization_response_code'] ?? null,
+            requestResponseCode: $data['request_response_code'] ?? null,
             requestCardAcceptorTerminal: $data['request_card_acceptor_terminal'] ?? null,
             requestCardAcceptorIdentificationCode: $data['request_card_acceptor_identification_code'] ?? null,
             requestCardAcceptorNameLocation: $data['request_card_acceptor_name_location'] ?? null,
-            requestContainsPdsInLtvFormat: $data['request_contains_pds_in_ltv_format'] ?? null,
             requestTransactionCurrencyCode: $data['request_transaction_currency_code'] ?? null,
-            requestTransactionAmount: $data['request_transaction_amount'] ?? null,
+            requestTransactionCurrencyCode2: $data['request_transaction_currency_code_2'] ?? null,
             requestCurrencyCodeCardholderBilling: $data['request_currency_code_cardholder_billing'] ?? null,
-            requestPsProductCode: $data['request_ps_product_code'] ?? null,
+            requestValues: $data['request_values'] ?? null,
+            requestReplacementAmounts: $data['request_replacement_amounts'] ?? null,
             responseMti: $data['response_mti'] ?? null,
             responseCardNumber: $data['response_card_number'] ?? null,
             responseProcessingCode: $data['response_processing_code'] ?? null,
@@ -122,79 +133,26 @@ class TransactionEntity
         );
     }
 
-    public function toArray(): array
-    {
-        return [
-            'transaction_uuid' => $this->transactionUuid,
-            'transaction_type' => $this->transactionType,
-            'card_uuid' => $this->cardUuid,
-            'uuid' => $this->uuid,
-            'id' => $this->id,
-            'request_mti' => $this->requestMti,
-            'request_card_number' => $this->requestCardNumber,
-            'request_processing_code' => $this->requestProcessingCode,
-            'request_transaction_amount_local_original' => $this->requestTransactionAmountLocalOriginal,
-            'request_transaction_amount_local' => isset($this->requestTransactionAmountLocal) ? $this->requestTransactionAmountLocal->toCents() : null,
-            'request_transaction_amount_referencia' => isset($this->requestTransactionAmountReferencia) ? $this->requestTransactionAmountReferencia->toCents() : null,
-            'request_amount_in_card_holder_billing' => isset($this->requestAmountInCardHolderBilling) ? $this->requestAmountInCardHolderBilling->toCents() : null,
-            'request_transmition_date_and_time' => $this->requestTransmitionDateAndTime,
-            'request_convertion_rate_card_holder_billing' => $this->requestConvertionRateCardHolderBilling,
-            'request_system_trace_audit_number' => $this->requestSystemTraceAuditNumber,
-            'request_local_transaction_time' => $this->requestLocalTransactionTime,
-            'request_local_transaction_date' => $this->requestLocalTransactionDate,
-            'request_expiration_date' => $this->requestExpirationDate,
-            'request_mcc' => $this->requestMcc,
-            'request_acquiring_institution_country_code' => $this->requestAcquiringInstitutionCountryCode,
-            'request_pos_entry_mode' => $this->requestPosEntryMode,
-            'request_pos_condition_code' => $this->requestPosConditionCode,
-            'request_aquiring_institution_code' => $this->requestAquiringInstitutionCode,
-            'request_retrieval_reference_number' => $this->requestRetrievalReferenceNumber,
-            'request_authorization_response_code' => $this->requestAuthorizationResponseCode,
-            'request_card_acceptor_terminal' => $this->requestCardAcceptorTerminal,
-            'request_card_acceptor_identification_code' => $this->requestCardAcceptorIdentificationCode,
-            'request_card_acceptor_name_location' => $this->requestCardAcceptorNameLocation,
-            'request_contains_pds_in_ltv_format' => $this->requestContainsPdsInLtvFormat,
-            'request_transaction_currency_code' => $this->requestTransactionCurrencyCode,
-            'request_transaction_amount' => $this->requestTransactionAmount,
-            'request_currency_code_cardholder_billing' => $this->requestCurrencyCodeCardholderBilling,
-            'request_ps_product_code' => $this->requestPsProductCode,
-            'response_mti' => $this->responseMti,
-            'response_card_number' => $this->responseCardNumber,
-            'response_processing_code' => $this->responseProcessingCode,
-            'response_transaction_amount_local' => isset($this->responseTransactionAmountLocal) ? $this->responseTransactionAmountLocal->toCents() : null,
-            'response_amount_in_card_holder_billing' => isset($this->responseAmountInCardHolderBilling) ? $this->responseAmountInCardHolderBilling->toCents() : null,
-            'response_transmition_date_and_time' => $this->responseTransmitionDateAndTime,
-            'response_conversion_rate' => $this->responseConversionRate,
-            'response_system_trace_audit_number' => $this->responseSystemTraceAuditNumber,
-            'response_acquiring_institution_country_code' => $this->responseAcquiringInstitutionCountryCode,
-            'response_pos_condition_code' => $this->responsePosConditionCode,
-            'response_aquiring_institution_code' => $this->responseAquiringInstitutionCode,
-            'response_retrieval_reference_number' => $this->responseRetrievalReferenceNumber,
-            'response_authorization_identification_response' => $this->responseAuthorizationIdentificationResponse,
-            'response_code' => $this->responseCode,
-            'response_card_acceptor_terminal' => $this->responseCardAcceptorTerminal,
-            'response_card_acceptor_identification_code' => $this->responseCardAcceptorIdentificationCode,
-            'response_card_acceptor_name_location' => $this->responseCardAcceptorNameLocation,
-            'response_transaction_currency_code' => $this->responseTransactionCurrencyCode,
-            'response_currency_code_cardholder_billing' => $this->responseCurrencyCodeCardholderBilling,
-        ];
-    }
-
-    public static function fromModel(Transaction $model): self
+    public static function fromModel(ChargeBack $model): self
     {
         return new self(
-            transactionUuid: $model->uuid,
+            chargeBackUuid: $model->charge_back_uuid,
+            transactionOriginalUuid: $model->transaction_original_uuid,
             transactionType: $model->transaction_type,
-            cardUuid: $model->card_uuid,
-            uuid: $model->uuid,
+            psProductCode: $model->ps_product_code,
+            psProductName: $model->ps_product_name,
+            countryCode: $model->country_code,
+            preAuthorization: $model->pre_authorization,
+            entryMode: $model->entry_mode,
             id: $model->id,
+            uuid: $model->uuid,
             requestMti: $model->request_mti,
             requestCardNumber: $model->request_card_number,
             requestProcessingCode: $model->request_processing_code,
-            requestTransactionAmountLocalOriginal: $model->request_transaction_amount_local_original,
-            requestTransactionAmountLocal: isset($model->request_transaction_amount_local) ? MoneyVO::fromCents($model->request_transaction_amount_local) : null,
-            requestTransactionAmountReferencia: isset($model->request_transaction_amount_referencia) ? MoneyVO::fromCents($model->request_transaction_amount_referencia) : null,
-            requestAmountInCardHolderBilling: isset($model->request_amount_in_card_holder_billing) ? MoneyVO::fromCents($model->request_amount_in_card_holder_billing) : null,
+            requestPsProductCode: $model->request_ps_product_code,
+            requestOriginalTransactionAmountValue: $model->request_original_transaction_amount_value,
+            requestOriginalTransactionAmount: isset($model->request_original_transaction_amount) ? MoneyVO::fromCents($model->request_original_transaction_amount) : null,
+            requestTransactionAmount: isset($model->request_transaction_amount) ? MoneyVO::fromCents($model->request_transaction_amount) : null,
             requestTransmitionDateAndTime: $model->request_transmition_date_and_time,
             requestConvertionRateCardHolderBilling: $model->request_convertion_rate_card_holder_billing,
             requestSystemTraceAuditNumber: $model->request_system_trace_audit_number,
@@ -207,15 +165,15 @@ class TransactionEntity
             requestPosConditionCode: $model->request_pos_condition_code,
             requestAquiringInstitutionCode: $model->request_aquiring_institution_code,
             requestRetrievalReferenceNumber: $model->request_retrieval_reference_number,
-            requestAuthorizationResponseCode: $model->request_authorization_response_code,
+            requestResponseCode: $model->request_response_code,
             requestCardAcceptorTerminal: $model->request_card_acceptor_terminal,
             requestCardAcceptorIdentificationCode: $model->request_card_acceptor_identification_code,
             requestCardAcceptorNameLocation: $model->request_card_acceptor_name_location,
-            requestContainsPdsInLtvFormat: $model->request_contains_pds_in_ltv_format,
             requestTransactionCurrencyCode: $model->request_transaction_currency_code,
-            requestTransactionAmount: $model->request_transaction_amount,
+            requestTransactionCurrencyCode2: $model->request_transaction_currency_code_2,
             requestCurrencyCodeCardholderBilling: $model->request_currency_code_cardholder_billing,
-            requestPsProductCode: $model->request_ps_product_code,
+            requestValues: $model->request_values,
+            requestReplacementAmounts: $model->request_replacement_amounts,
             responseMti: $model->response_mti,
             responseCardNumber: $model->response_card_number,
             responseProcessingCode: $model->response_processing_code,
@@ -238,6 +196,69 @@ class TransactionEntity
         );
     }
 
+    public function toArray(): array
+    {
+        return [
+            'charge_back_uuid' => $this->chargeBackUuid,
+            'transaction_original_uuid' => $this->transactionOriginalUuid,
+            'transaction_type' => $this->transactionType,
+            'ps_product_code' => $this->psProductCode,
+            'ps_product_name' => $this->psProductName,
+            'country_code' => $this->countryCode,
+            'pre_authorization' => $this->preAuthorization,
+            'entry_mode' => $this->entryMode,
+            'id' => $this->id,
+            'uuid' => $this->uuid,
+            'request_mti' => $this->requestMti,
+            'request_card_number' => $this->requestCardNumber,
+            'request_processing_code' => $this->requestProcessingCode,
+            'request_ps_product_code' => $this->requestPsProductCode,
+            'request_original_transaction_amount_value' => $this->requestOriginalTransactionAmountValue,
+            'request_original_transaction_amount' => $this->requestOriginalTransactionAmount?->toCents(),
+            'request_transaction_amount' => $this->requestTransactionAmount?->toCents(),
+            'request_transmition_date_and_time' => $this->requestTransmitionDateAndTime,
+            'request_convertion_rate_card_holder_billing' => $this->requestConvertionRateCardHolderBilling,
+            'request_system_trace_audit_number' => $this->requestSystemTraceAuditNumber,
+            'request_local_transaction_time' => $this->requestLocalTransactionTime,
+            'request_local_transaction_date' => $this->requestLocalTransactionDate,
+            'request_expiration_date' => $this->requestExpirationDate,
+            'request_mcc' => $this->requestMcc,
+            'request_acquiring_institution_country_code' => $this->requestAcquiringInstitutionCountryCode,
+            'request_pos_entry_mode' => $this->requestPosEntryMode,
+            'request_pos_condition_code' => $this->requestPosConditionCode,
+            'request_aquiring_institution_code' => $this->requestAquiringInstitutionCode,
+            'request_retrieval_reference_number' => $this->requestRetrievalReferenceNumber,
+            'request_response_code' => $this->requestResponseCode,
+            'request_card_acceptor_terminal' => $this->requestCardAcceptorTerminal,
+            'request_card_acceptor_identification_code' => $this->requestCardAcceptorIdentificationCode,
+            'request_card_acceptor_name_location' => $this->requestCardAcceptorNameLocation,
+            'request_transaction_currency_code' => $this->requestTransactionCurrencyCode,
+            'request_transaction_currency_code_2' => $this->requestTransactionCurrencyCode2,
+            'request_currency_code_cardholder_billing' => $this->requestCurrencyCodeCardholderBilling,
+            'request_values' => $this->requestValues,
+            'request_replacement_amounts' => $this->requestReplacementAmounts,
+            'response_mti' => $this->responseMti,
+            'response_card_number' => $this->responseCardNumber,
+            'response_processing_code' => $this->responseProcessingCode,
+            'response_transaction_amount_local' => $this->responseTransactionAmountLocal?->toCents(),
+            'response_amount_in_card_holder_billing' => $this->responseAmountInCardHolderBilling?->toCents(),
+            'response_transmition_date_and_time' => $this->responseTransmitionDateAndTime,
+            'response_conversion_rate' => $this->responseConversionRate,
+            'response_system_trace_audit_number' => $this->responseSystemTraceAuditNumber,
+            'response_acquiring_institution_country_code' => $this->responseAcquiringInstitutionCountryCode,
+            'response_pos_condition_code' => $this->responsePosConditionCode,
+            'response_aquiring_institution_code' => $this->responseAquiringInstitutionCode,
+            'response_retrieval_reference_number' => $this->responseRetrievalReferenceNumber,
+            'response_authorization_identification_response' => $this->responseAuthorizationIdentificationResponse,
+            'response_code' => $this->responseCode,
+            'response_card_acceptor_terminal' => $this->responseCardAcceptorTerminal,
+            'response_card_acceptor_identification_code' => $this->responseCardAcceptorIdentificationCode,
+            'response_card_acceptor_name_location' => $this->responseCardAcceptorNameLocation,
+            'response_transaction_currency_code' => $this->responseTransactionCurrencyCode,
+            'response_currency_code_cardholder_billing' => $this->responseCurrencyCodeCardholderBilling
+        ];
+    }
+
     public function isApproved(): bool
     {
         return $this->responseCode === '00';
@@ -248,29 +269,38 @@ class TransactionEntity
         return $this->responseCode !== '00';
     }
 
-    public function exists(string $otherTransactionUuid): bool
+    public function exists(string $otherChargeBackUuid): bool
     {
-        return $this->transactionUuid === $otherTransactionUuid;
+        return $this->chargeBackUuid === $otherChargeBackUuid;
     }
 
-    public function getTransactionUuid(): string
-    {
-        return $this->transactionUuid;
-    }
+    /**
+     * Valida se valor de estorno não excede o disponível
+     * 
+     * Lógica (extraída de CommonService->checkAmount()):
+     * 1. Transação Original: R$ 100,00
+     * 2. ChargeBack (Estornos): R$ 60,00 → getTotalReversedAmount
+     * 3. Cancelamentos de ChargeBack: R$ 20,00 → getTotalCreditAmount
+     * 4. Líquido Estornado: R$ 60 - R$ 20 = R$ 40,00
+     * 5. Disponível para Estorno: R$ 100 - R$ 40 = R$ 60,00
+     * 6. Valida: Valor Solicitado <= Disponível
+     * 
+     * @param  MoneyVO  $amountTransaction  Valor da transação original
+     * @param  MoneyVO  $totalCreditAmount  Total de cancelamentos de estorno
+     * @param  MoneyVO  $requestedAmount  Valor solicitado para estorno (em centavos)
+     * 
+     * @return bool True se valor está disponível, false se excede
+     */
 
-    public function getCardUuid(): string
-    {
-        return $this->cardUuid;
-    }
+    public function isAmountAvailableForChargeBack(
+        MoneyVO $amountTransaction,
+        MoneyVO $totalCreditAmount,
+        MoneyVO $requestedAmount
+    ): bool {
+        // Valor líquido já estornado (estornos + o valor do momento)
+        $netReversedAmount = $totalCreditAmount->add($requestedAmount);
 
-    public function getValue(): MoneyVO
-    {
-        return $this->requestTransactionAmountLocal;
-    }
-
-    public function getDescription(): string
-    {
-        $type = $this->transactionType == 'PURCHASE' ? 'COMPRA' : 'SAQUE';
-        return $type . ' | ' . ($this->requestCardAcceptorNameLocation ?? '');
+        // Verificar se a soma do valor solicitado com total já estonado não excede o valor da transação original
+        return $amountTransaction->greaterThanOrEqual($netReversedAmount);
     }
 }

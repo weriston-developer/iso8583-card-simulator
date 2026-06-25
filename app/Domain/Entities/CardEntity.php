@@ -2,6 +2,7 @@
 
 namespace App\Domain\Entities;
 
+use App\Infra\Persistence\Models\Card;
 use App\Domain\VOs\MoneyVO;
 
 class CardEntity
@@ -29,7 +30,7 @@ class CardEntity
         );
     }
 
-    public static function fromModel(cardModel $model): self
+    public static function fromModel(Card $model): self
     {
         return new self(
             status: $model->status,

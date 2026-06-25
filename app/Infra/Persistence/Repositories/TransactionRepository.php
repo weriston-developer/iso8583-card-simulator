@@ -3,12 +3,13 @@
 namespace App\Infra\Persistence\Repositories;
 
 use App\Domain\Entities\TransactionEntity;
+use App\Infra\Persistence\Models\Transaction;
 use App\Infra\Persistence\Repositories\Interface\TransactionInterface;
 
 class TransactionRepository implements TransactionInterface
 {
     public function __construct(
-        private readonly \App\Models\TransactionModel $transactionModel,
+        private readonly Transaction $transactionModel,
     ) {}
 
     public function create(TransactionEntity $data): void
@@ -18,9 +19,9 @@ class TransactionRepository implements TransactionInterface
         );
     }
 
-    public function findByTransactionId(string $transactionId): ?TransactionEntity
+    public function findByTransactionUuid(string $transactionUuid): ?TransactionEntity
     {
-        $transaction = $this->transactionModel->where('transaction_id', $transactionId)->first();
+        $transaction = $this->transactionModel->where('transaction_uuid', $transactionUuid)->first();
 
         if (!$transaction) {
             return null;

@@ -6,10 +6,12 @@ use App\Application\DTOs\Outputs\TransactionOutput;
 use App\Application\DTOs\Inputs\TransactionInput;
 use App\Domain\Entities\CardEntity;
 use App\Domain\Entities\TransactionEntity;
+use App\Domain\Services\TransactionService;
 use App\Domain\VOs\MoneyVO;
 use App\Infra\Persistence\Repositories\Interface\BalanceInterface;
 use App\Infra\Persistence\Repositories\Interface\CardInterface;
 use App\Infra\Persistence\Repositories\Interface\TransactionInterface;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 class TransactionUseCase
@@ -22,12 +24,14 @@ class TransactionUseCase
      * @param CardInterface $cardRepository
      * @param TransactionInterface $transactionRepository
      * @param BalanceInterface $balanceRepository
+     * @param TransactionService $transactionService
      */
 
     public function __construct(
         private readonly CardInterface $cardRepository,
         private readonly TransactionInterface $transactionRepository,
         private readonly BalanceInterface $balanceRepository,
+        private readonly TransactionService $transactionService,
     ) {}
     public function execute(TransactionInput $input): TransactionOutput
     {
@@ -114,6 +118,7 @@ class TransactionUseCase
         ?MoneyVO $currentBalance,
     ): void {
         $transactionEntity = TransactionEntity::fromArray([
+            'uuid' => Str::uuid()->toString(),
             'transaction_uuid' => $input->transactionUuid,
             'transaction_type' => $input->transactionType,
             'card_uuid' => (string) ($card->uuid ?? $input->cardInput->cardUuid),
@@ -170,6 +175,6 @@ class TransactionUseCase
 
         $this->transactionRepository->create($transactionEntity);
 
-        //TODO: Simular o debito do valor da transacao no saldo do cartao
+        $this->transactionService->executePayment($transactionEntity);
     }
 }

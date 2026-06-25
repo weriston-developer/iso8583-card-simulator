@@ -3,12 +3,13 @@
 namespace App\Infra\Persistence\Repositories;
 
 use App\Domain\Entities\CardEntity;
+use App\Infra\Persistence\Models\Card;
 use App\Infra\Persistence\Repositories\Interface\CardInterface;
 
 class CardRepository implements CardInterface
 {
     public function __construct(
-        private readonly \App\Models\CardModel $cardModel,
+        private readonly Card $cardModel,
     ) {}
 
     public function findByUuid(string $uuid): ?CardEntity
