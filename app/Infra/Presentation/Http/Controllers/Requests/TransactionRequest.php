@@ -7,11 +7,11 @@ use App\Application\DTOs\Inputs\Info\AuthorizationInput;
 use App\Application\DTOs\Inputs\Info\CardInput;
 use App\Application\DTOs\Inputs\Info\EstablishmentInput;
 use App\Application\DTOs\Inputs\Info\TransactionMessageInput;
-use App\Application\DTOs\Inputs\PurchaseInput;
+use App\Application\DTOs\Inputs\TransactionInput;
 use App\Domain\VOs\MoneyVO;
 use Illuminate\Foundation\Http\FormRequest;
 
-class PurchaseRequest extends FormRequest
+class TransactionRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -29,7 +29,8 @@ class PurchaseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'transaction_id' => ['required', 'string'],
+            'transaction_uuid' => ['required', 'string'],
+            'transaction_type' => ['required', 'string'],
             'ps_product_code' => ['required', 'string'],
             'ps_product_name' => ['required', 'string'],
             'country_code' => ['required', 'string', 'size:2'],
@@ -71,13 +72,14 @@ class PurchaseRequest extends FormRequest
         ];
     }
 
-    public function toInput(): PurchaseInput
+    public function toInput(): TransactionInput
     {
         /** @var array<string, mixed> $data */
         $data = $this->validated();
 
-        return new PurchaseInput(
-            transactionId: (string) $data['transaction_id'],
+        return new TransactionInput(
+            transactionUuid: (string) $data['transaction_uuid'],
+            transactionType: (string) $data['transaction_type'],
             psProductCode: (string) $data['ps_product_code'],
             psProductName: (string) $data['ps_product_name'],
             countryCode: (string) $data['country_code'],
@@ -106,7 +108,7 @@ class PurchaseRequest extends FormRequest
                 originalCurrencyCode: (string) data_get($data, 'amount.original_currency_code')
             ),
             cardInput: new CardInput(
-                cardId: (int) data_get($data, 'card_input.card_id'),
+                cardUuid: (string) data_get($data, 'card_input.card_uuid'),
                 cardLastFourDigits: (string) data_get($data, 'card_input.card_last_four_digits'),
                 cardInput: (string) data_get($data, 'card_input.card_input'),
                 bin: (string) data_get($data, 'card_input.bin')
