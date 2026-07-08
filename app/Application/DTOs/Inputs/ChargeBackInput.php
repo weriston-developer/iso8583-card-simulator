@@ -8,10 +8,12 @@ use App\Application\DTOs\Inputs\Info\CardInput;
 use App\Application\DTOs\Inputs\Info\EstablishmentInput;
 use App\Application\DTOs\Inputs\Info\TransactionMessageInput;
 
-final class PurchaseInput
+final class ChargeBackInput
 {
     public function __construct(
-        public readonly string $transactionId,
+        public readonly string $chargeBackUuid,
+        public readonly string $transactionOriginalUuid,
+        public readonly string $transactionType,
         public readonly string $psProductCode,
         public readonly string $psProductName,
         public readonly string $countryCode,
@@ -27,6 +29,5 @@ final class PurchaseInput
         public readonly TransactionMessageInput $iso8583MessageInput,
         public readonly bool $forceAccept,
         public readonly string $platform,
-    ) {
-    }
+    ) {}
 }
