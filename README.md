@@ -1,59 +1,198 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ISO8583 Card Simulator
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API para simular autorizacao de transacoes de cartao no formato ISO8583, com foco em regras de negocio de saldo, limite e idempotencia.
 
-## About Laravel
+## 🚀 Quick Start
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### 1) Pre-requisitos
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- PHP 8.4.1+ (obrigatorio para dependencias instaladas)
+- Composer 2+
+- Node.js 20+ e npm
+- Banco configurado no arquivo .env
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### 2) Instalar dependencias
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+npm install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### 3) Configurar ambiente
 
-## Contributing
+```bash
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 4) Subir aplicacao
 
-## Code of Conduct
+```bash
+# API + fila + logs + vite (workflow completo)
+composer run dev
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# ou somente API
+php artisan serve
+```
 
-## Security Vulnerabilities
+## 🎯 O que o sistema faz
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Este simulador processa transacoes de cartao e retorna resposta padronizada por codigo de autorizacao.
 
-## License
+Fluxo principal:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-# iso8583-card-simulator
+1. Recebe requisicao com dados da transacao e campos ISO8583.
+2. Valida cartao, limite mensal, duplicidade e saldo.
+3. Persiste tentativa da transacao (aprovada ou negada).
+4. Em aprovacao, executa movimento financeiro.
+5. Retorna payload de resposta com message, code e authorization_code.
+
+## 🧱 Arquitetura
+
+Organizacao em camadas no padrao Application/Domain/Infra:
+
+- Application: DTOs e Use Cases
+- Domain: entidades, servicos e objetos de valor
+- Infra: controllers HTTP, models e repositories
+
+Estrutura principal:
+
+- app/Application
+- app/Domain
+- app/Infra
+
+## ⚙️ Tecnologias usadas
+
+Backend:
+
+- PHP 8.4+ (runtime requerido pelas dependencias resolvidas)
+- Laravel 13
+- PHPUnit 12
+
+Persistencia e cache:
+
+- Eloquent ORM (models e migrations)
+- Redis para cache de saldo
+- Banco SQL configuravel (mysql/sqlsrv/sqlite/pgsql no Laravel)
+- Integracao com procedure SQL para movimento financeiro: sp_insert_movement_card
+
+Frontend/build:
+
+- Vite 8
+- Tailwind CSS 4
+
+Containerizacao (opcional):
+
+- Laravel Sail (compose.yaml)
+- MySQL, Redis, Meilisearch, Mailpit e Selenium no ambiente Docker
+
+## 📡 Endpoints
+
+Base URL local:
+
+```text
+http://localhost:8000/api
+```
+
+### GET /health
+
+Verifica disponibilidade do sistema e conexao com banco.
+
+Exemplo:
+
+```bash
+curl -X GET http://localhost:8000/api/health
+```
+
+Resposta de sucesso:
+
+```json
+{
+	"message": "Operacao realizada com sucesso.",
+	"code": 0
+}
+```
+
+### POST /purchase
+
+Processa compra (transaction_type deve ser PURCHASE).
+
+### POST /withdrawal
+
+Processa saque (transaction_type deve ser WITHDRAWAL).
+
+Payload base (exemplo para purchase):
+
+```json
+{
+	"transaction_uuid": "b7d4d640-d6a2-4f7a-9bc6-0cc91f6ce001",
+	"transaction_type": "PURCHASE",
+	"ps_product_code": "001",
+	"ps_product_name": "CARD",
+	"country_code": "BR",
+	"pre_authorization": "false",
+    ...
+}
+```
+
+Exemplo de chamada:
+
+```bash
+curl -X POST http://localhost:8000/api/purchase \
+	-H "Content-Type: application/json" \
+	-d @payload.json
+```
+
+## 🧠 Regras de negocio principais
+
+- Transacao duplicada (transaction_uuid ja existente) retorna authorization_code 07.
+- Saldo insuficiente retorna authorization_code 01.
+- Cartao nao encontrado retorna authorization_code 02.
+- Cartao inativo/invalido retorna authorization_code 03.
+- Valor acima do limite mensal retorna authorization_code 08.
+- Somente authorization_code 00 dispara movimento financeiro.
+
+## 📊 Codigos de resposta
+
+| authorization_code | HTTP | Significado |
+|---|---:|---|
+| 00 | 200 | Operacao realizada com sucesso |
+| 01 | 400 | Saldo insuficiente |
+| 02 | 404 | Cartao nao encontrado |
+| 03 | 400 | Cartao invalido ou inativo |
+| 07 | 409 | Operacao ja feita |
+| 08 | 400 | Valor da transacao excede o permitido |
+| 60 | 500 | Erro ao processar transacao |
+| 96 | 500 | Sistema indisponivel |
+
+## 🧪 Testes e validacao
+
+Executar testes:
+
+```bash
+php artisan test
+```
+
+Executar com script do Composer:
+
+```bash
+composer test
+```
+
+### Invalid transaction type
+
+Causa:
+
+- transaction_type diferente do endpoint usado.
+
+Solucao:
+
+- Em POST /purchase, usar transaction_type = PURCHASE.
+- Em POST /withdrawal, usar transaction_type = WITHDRAWAL.
+
+## 📝 Notas finais
+
+- O projeto persiste request e response ISO8583 em tabela transactions.
+- O saldo usa cache Redis com invalidacao apos transacao aprovada.
+- O documento reflete o comportamento atual implementado em codigo.
