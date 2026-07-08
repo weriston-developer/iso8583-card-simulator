@@ -11,5 +11,6 @@ Route::get('/', function (Request $request) {
 
 Route::group([], function () {
     Route::get('health', [TransactionController::class, 'health'])->name('health');
-    Route::post('/purchase', [TransactionController::class, 'purchase'])->name('purchase') ;
+    Route::post('/purchase', [TransactionController::class, 'purchase'])->name('purchase');
+    Route::post('/withdrawal', [TransactionController::class, 'withdrawal'])->name('withdrawal');
 });

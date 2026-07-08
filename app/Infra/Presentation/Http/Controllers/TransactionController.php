@@ -50,7 +50,7 @@ class TransactionController extends Controller
         return response()->json($output->getData(), $output->getStatusCode());
     }
 
-    public function WITHDRAWAL(TransactionRequest $request, TransactionUseCase $useCase)
+    public function withdrawal(TransactionRequest $request, TransactionUseCase $useCase)
     {
         if ($request->input('transaction_type') !== 'WITHDRAWAL') {
             return response()->json(['error' => 'Invalid transaction type'], 400);
